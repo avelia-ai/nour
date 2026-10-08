@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "NOUR",
+    "slug": "nour",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "nour",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "NOUR utilise votre position pour calculer les horaires de prière et la direction de la Qibla."
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nourapp.mobile"
+    },
+    "android": {
+      "package": "com.nourapp.mobile"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0E4D3D"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "64e3aa44-04b2-44a8-bfeb-e0f74e9614fe"
+      }
+    }
+  }
+}
