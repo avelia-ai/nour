@@ -251,6 +251,8 @@ export default function Home() {
             onTheme={toggleTheme}
           />
 
+          <OrientalDivider theme={theme} />
+
           <View style={styles.eyebrowRow}>
             <View
               style={[
@@ -332,6 +334,8 @@ export default function Home() {
               </View>
             </View>
           </View>
+
+          <OrientalDivider theme={theme} />
 
           <View style={styles.introRow}>
             <View style={{ flex: 1 }}>
@@ -558,6 +562,8 @@ export default function Home() {
           <View style={styles.sectionHead}>
             <View>
               <Text style={[styles.sectionKicker, { color: theme.gold }]}>
+          <OrientalDivider theme={theme} />
+
                 PETITE HABITUDE
               </Text>
               <Text style={[styles.sectionTitle, { color: theme.ink }]}>
@@ -629,6 +635,8 @@ export default function Home() {
           <View style={styles.sectionHead}>
             <View>
               <Text style={[styles.sectionKicker, { color: theme.gold }]}>
+          <OrientalDivider theme={theme} />
+
                 VOTRE PARCOURS
               </Text>
               <Text style={[styles.sectionTitle, { color: theme.ink }]}>
@@ -797,7 +805,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    marginVertical: 24,
+    marginVertical: 32,
     paddingHorizontal: 8,
   },
 
