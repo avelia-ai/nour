@@ -80,6 +80,67 @@ function Shortcut({
   );
 }
 
+function OrientalDivider({
+  theme,
+}: {
+  theme: ReturnType<typeof useNour>['theme'];
+}) {
+  return (
+    <View style={styles.sectionDivider}>
+      <View
+        style={[
+          styles.sectionDividerLine,
+          { backgroundColor: theme.line },
+        ]}
+      />
+
+      <View
+        style={[
+          styles.sectionDividerOrnament,
+          {
+            backgroundColor: theme.card,
+            borderColor: theme.line,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.sectionDividerDot,
+            { color: theme.muted },
+          ]}
+        >
+          ·
+        </Text>
+
+        <Text
+          style={[
+            styles.sectionDividerSymbol,
+            { color: theme.gold },
+          ]}
+        >
+          ۞
+        </Text>
+
+        <Text
+          style={[
+            styles.sectionDividerDot,
+            { color: theme.muted },
+          ]}
+        >
+          ·
+        </Text>
+      </View>
+
+      <View
+        style={[
+          styles.sectionDividerLine,
+          { backgroundColor: theme.line },
+        ]}
+      />
+    </View>
+  );
+}
+
 export default function Home() {
   const { theme, toggleTheme } = useNour();
   const { width } = useWindowDimensions();
@@ -328,6 +389,8 @@ export default function Home() {
               onPress={() => router.push('/profile')}
             />
           </View>
+
+          <OrientalDivider theme={theme} />
 
           <View style={styles.sectionHead}>
             <View>
@@ -680,6 +743,8 @@ export default function Home() {
             ))}
           </PremiumCard>
 
+          <OrientalDivider theme={theme} />
+
           <View
             style={[
               styles.levelSummary,
@@ -711,6 +776,8 @@ export default function Home() {
             </View>
           </View>
 
+          <OrientalDivider theme={theme} />
+
           <View style={styles.bottomPhrase}>
             <Text style={[styles.bottomArabic, { color: theme.gold }]}>
               نُورٌ عَلَى نُورٍ
@@ -726,6 +793,44 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  sectionDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: 24,
+    paddingHorizontal: 8,
+  },
+
+  sectionDividerLine: {
+    flex: 1,
+    height: 1,
+    opacity: 0.75,
+  },
+
+  sectionDividerOrnament: {
+    minWidth: 78,
+    height: 30,
+    marginHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: 8,
+  },
+
+  sectionDividerSymbol: {
+    fontSize: 17,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+
+  sectionDividerDot: {
+    fontSize: 13,
+    lineHeight: 16,
+    marginHorizontal: 4,
+  },
+
   content: {
     paddingHorizontal: 18,
     paddingBottom: 124,
