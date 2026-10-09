@@ -13,9 +13,12 @@ export type VerseProgress = {
   ayahNumber: number;
   score: number;
   lastPracticedAt?: string;
+  nextReviewAt?: string;
   readCount: number;
   reviewCount: number;
 };
+
+export type NourLearningLevel = 'beginner' | 'intermediate' | 'advanced';
 
 export type NourProgress = {
   xp: number;
@@ -23,6 +26,8 @@ export type NourProgress = {
   bestStreak: number;
   lastActiveDate: string | null;
   goal: NourGoal | null;
+  learningLevel: NourLearningLevel | null;
+  dailyMinutes: 5 | 10 | 20 | 30 | null;
   verses: VerseProgress[];
   completedMissions: string[];
 };
@@ -66,6 +71,8 @@ const EMPTY_PROGRESS: NourProgress = {
   bestStreak: 0,
   lastActiveDate: null,
   goal: null,
+  learningLevel: null,
+  dailyMinutes: null,
   verses: [],
   completedMissions: [],
 };
@@ -98,6 +105,21 @@ export async function saveNourProgress(
 ): Promise<NourProgress> {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
   return progress;
+}
+
+export async function saveNourLearningProfile(
+  goal: NourGoal,
+  learningLevel: NourLearningLevel,
+  dailyMinutes: 5 | 10 | 20 | 30,
+): Promise<NourProgress> {
+  const progress = await getNourProgress();
+
+  return saveNourProgress({
+    ...progress,
+    goal,
+    learningLevel,
+    dailyMinutes,
+  });
 }
 
 export function getNourLevel(xp: number): NourLevel {
@@ -264,17 +286,35 @@ export async function recordVersePractice(
       verse.ayahNumber === ayahNumber,
   );
 
-  const now = new Date().toISOString();
+  const nowDate = new Date();
+  const now = nowDate.toISOString();
+
+  const updatedScore = existing
+    ? Math.min(
+        100,
+        existing.score +
+          (mode === 'review' ? 8 : mode === 'learn' ? 5 : 2),
+      )
+    : mode === 'learn' ? 15 : 5;
+
+  // Plus le score est faible, plus la révision revient rapidement.
+  const intervalDays =
+    updatedScore < 40 ? 1
+    : updatedScore < 60 ? 2
+    : updatedScore < 80 ? 4
+    : updatedScore < 90 ? 7
+    : 14;
+
+  const nextReviewDate = new Date(nowDate);
+  nextReviewDate.setDate(nextReviewDate.getDate() + intervalDays);
+  nextReviewDate.setHours(12, 0, 0, 0);
 
   const updatedVerse: VerseProgress = existing
     ? {
         ...existing,
-        score: Math.min(
-          100,
-          existing.score +
-            (mode === 'review' ? 8 : mode === 'learn' ? 5 : 2),
-        ),
+        score: updatedScore,
         lastPracticedAt: now,
+        nextReviewAt: nextReviewDate.toISOString(),
         readCount: existing.readCount + 1,
         reviewCount:
           existing.reviewCount + (mode === 'review' ? 1 : 0),
@@ -282,8 +322,9 @@ export async function recordVersePractice(
     : {
         surahNumber,
         ayahNumber,
-        score: mode === 'learn' ? 15 : 5,
+        score: updatedScore,
         lastPracticedAt: now,
+        nextReviewAt: nextReviewDate.toISOString(),
         readCount: 1,
         reviewCount: mode === 'review' ? 1 : 0,
       };

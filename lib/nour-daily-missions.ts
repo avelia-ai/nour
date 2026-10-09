@@ -29,11 +29,31 @@ function todayKey(date = new Date()): string {
 }
 
 function getWeakestVerse(progress: NourProgress) {
-  return [...progress.verses]
-    .filter((verse) => verse.score < 90)
-    .sort((a, b) => a.score - b.score)[0];
-}
+  const now = Date.now();
 
+  return [...progress.verses]
+    .filter((verse) => {
+      if (!verse.nextReviewAt) return true;
+
+      const dueAt = Date.parse(verse.nextReviewAt);
+      return !Number.isFinite(dueAt) || dueAt <= now;
+    })
+    .sort((a, b) => {
+      if (a.score !== b.score) {
+        return a.score - b.score;
+      }
+
+      const aDate = a.nextReviewAt
+        ? Date.parse(a.nextReviewAt)
+        : Number.NEGATIVE_INFINITY;
+
+      const bDate = b.nextReviewAt
+        ? Date.parse(b.nextReviewAt)
+        : Number.NEGATIVE_INFINITY;
+
+      return aDate - bDate;
+    })[0];
+}
 function getNextVerse(progress: NourProgress) {
   if (progress.verses.length === 0) {
     return null;
@@ -68,11 +88,14 @@ function buildMission(
       kind,
       title: weakVerse
         ? `Réviser le verset ${weakVerse.ayahNumber}`
-        : 'Commencer une révision',
+        : 'Révision guidée du premier verset',
       description: weakVerse
         ? `Renforce un verset encore fragile · maîtrise actuelle ${weakVerse.score} %.`
-        : 'Commence à construire ta mémoire en relisant attentivement un verset.',
-      duration: '4 min',
+        : 'Commence par une révision guidée du verset de départ.',
+      duration:
+        progress.dailyMinutes && progress.dailyMinutes <= 5
+          ? '3 min'
+          : '4 min',
       xp: XP_REWARDS.review,
       locked: false,
       completed: progress.completedMissions.includes(id),
@@ -81,11 +104,24 @@ function buildMission(
             surahNumber: weakVerse.surahNumber,
             ayahNumber: weakVerse.ayahNumber,
           }
-        : undefined,
+        : {
+            surahNumber: 1,
+            ayahNumber: 1,
+          },
     };
   }
 
   if (kind === 'learn') {
+    const target = nextVerse
+      ? {
+          surahNumber: nextVerse.surahNumber,
+          ayahNumber: nextVerse.ayahNumber + 1,
+        }
+      : {
+          surahNumber: 1,
+          ayahNumber: 1,
+        };
+
     return {
       id,
       kind,
@@ -93,27 +129,60 @@ function buildMission(
         ? `Approfondir le verset ${nextVerse.ayahNumber + 1}`
         : 'Apprendre ton premier verset',
       description:
-        'Lis, écoute et répète un nouveau verset avec attention.',
-      duration: '6 min',
+        progress.learningLevel === 'advanced'
+          ? 'Approfondis un nouveau verset avec attention.'
+          : progress.learningLevel === 'intermediate'
+            ? 'Travaille un nouveau verset et consolide ta lecture.'
+            : 'Découvre un premier verset avec une progression guidée.',
+      duration:
+        progress.dailyMinutes && progress.dailyMinutes <= 5
+          ? '5 min'
+          : progress.dailyMinutes && progress.dailyMinutes >= 20
+            ? '8 min'
+            : '6 min',
       xp: XP_REWARDS.learnVerse,
       locked,
       completed: progress.completedMissions.includes(id),
-      target: nextVerse
-        ? {
-            surahNumber: nextVerse.surahNumber,
-            ayahNumber: nextVerse.ayahNumber + 1,
-          }
-        : undefined,
+      target,
     };
   }
+
+  const readTitle =
+    progress.goal === 'understand'
+      ? 'Lire pour comprendre'
+      : progress.goal === 'memorize'
+        ? 'Lire et consolider'
+        : progress.goal === 'recitation'
+          ? 'Lire avec attention'
+          : progress.goal === 'arabic'
+            ? 'Explorer les mots coraniques'
+            : 'Poursuivre la lecture';
+
+  const readDescription =
+    progress.learningLevel === 'beginner'
+      ? 'Avance tranquillement, verset par verset, pour construire une habitude solide.'
+      : progress.learningLevel === 'intermediate'
+        ? 'Poursuis ta lecture à un rythme confortable et régulier.'
+        : progress.goal === 'understand'
+          ? 'Lis attentivement et concentre-toi sur le sens de la traduction.'
+          : 'Entretiens ta fluidité tout en restant attentif au texte.';
+
+  const dailyMinutes = progress.dailyMinutes ?? 10;
+  const readDuration =
+    dailyMinutes <= 5
+      ? '2 min'
+      : dailyMinutes <= 10
+        ? '3 min'
+        : dailyMinutes <= 20
+          ? '6 min'
+          : '8 min';
 
   return {
     id,
     kind,
-    title: 'Lire dans le Coran',
-    description:
-      'Prends quelques minutes pour poursuivre ta lecture là où tu t’es arrêté.',
-    duration: '5 min',
+    title: readTitle,
+    description: readDescription,
+    duration: readDuration,
     xp: XP_REWARDS.read,
     locked,
     completed: progress.completedMissions.includes(id),
@@ -155,8 +224,15 @@ export function getDailyMissions(
       break;
   }
 
-  return order.map((kind, index) => {
-    if (index === 0) {
+  const scheduledMissions = order
+    .map((kind, index) => ({ kind, index }))
+    .filter(
+      ({ kind }) =>
+        kind !== 'review' || Boolean(getWeakestVerse(progress)),
+    );
+
+  return scheduledMissions.map(({ kind, index }, displayIndex) => {
+    if (displayIndex === 0) {
       return buildMission(
         dateKey,
         kind,
@@ -166,8 +242,9 @@ export function getDailyMissions(
       );
     }
 
+    const previous = scheduledMissions[displayIndex - 1];
     const previousMissionId =
-      `${dateKey}:${order[index - 1]}:${index - 1}`;
+      `${dateKey}:${previous.kind}:${previous.index}`;
 
     const locked =
       !progress.completedMissions.includes(previousMissionId);

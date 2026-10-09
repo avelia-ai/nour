@@ -238,7 +238,10 @@ export default function Quran() {
   }, [missionId]);
 
   useEffect(() => {
-    if (!missionId || selected || loadingSurah) {
+    const hasExplicitTarget =
+      missionSurahNumber > 0 && missionAyahNumber > 0;
+
+    if ((!missionId && !hasExplicitTarget) || selected || loadingSurah) {
       return;
     }
 
@@ -266,17 +269,7 @@ export default function Quran() {
 
   useEffect(() => {
     setMissionReady(false);
-
-    if (!missionId || missionCompleted || !selected) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setMissionReady(true);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [missionId, missionCompleted, selected]);
+  }, [missionId, missionCompleted, selected, pendingAyah]);
 
   async function validateMission() {
     if (
@@ -642,6 +635,55 @@ export default function Quran() {
                       Traduction indisponible pour ce verset.
                     </Text>
                   )}
+
+                  {isTarget && missionId ? (
+                    <Pressable
+                      disabled={
+                        missionCompleted ||
+                        missionSubmitting ||
+                        missionReady
+                      }
+                      onPress={() => setMissionReady(true)}
+                      style={{
+                        marginTop: 16,
+                        minHeight: 44,
+                        borderRadius: 14,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor:
+                          missionCompleted || missionReady
+                            ? theme.card2
+                            : theme.emerald,
+                        borderWidth: 1,
+                        borderColor:
+                          missionCompleted || missionReady
+                            ? theme.line
+                            : theme.emerald,
+                        paddingHorizontal: 14,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            missionCompleted || missionReady
+                              ? theme.muted
+                              : theme.white,
+                          fontSize: 12,
+                          fontWeight: '900',
+                        }}
+                      >
+                        {missionCompleted
+                          ? 'Verset déjà validé'
+                          : missionReady
+                            ? 'Verset pris en compte'
+                            : missionKind === 'review'
+                              ? 'J’ai révisé ce verset'
+                              : missionKind === 'learn'
+                                ? 'J’ai travaillé ce verset'
+                                : 'J’ai lu ce verset'}
+                      </Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               );
             })}

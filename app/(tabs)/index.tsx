@@ -200,7 +200,7 @@ export default function Home() {
   const missions = progress ? getDailyMissions(progress) : [];
   const missionProgress = getMissionProgress(missions);
 
-  function startMission(mission: DailyMission) {
+  async function startMission(mission: DailyMission) {
     const params: Record<string, string> = {
       missionId: mission.id,
       missionKind: mission.kind,
@@ -209,6 +209,9 @@ export default function Home() {
     if (mission.target) {
       params.surah = String(mission.target.surahNumber);
       params.ayah = String(mission.target.ayahNumber);
+    } else if (mission.kind === 'read') {
+      params.surah = String(reading?.surahNumber ?? 1);
+      params.ayah = String(reading?.ayahNumber ?? 1);
     }
 
     router.push({
@@ -227,8 +230,19 @@ export default function Home() {
       ]).then(([progressData, readingData]) => {
         if (!active) return;
 
+        if (
+          !progressData.goal ||
+          !progressData.learningLevel ||
+          !progressData.dailyMinutes
+        ) {
+          router.replace('/onboarding');
+          return;
+        }
+
         setProgress(progressData);
         setReading(readingData);
+      }).catch((error) => {
+        console.error('Impossible de charger le profil NOUR.', error);
       });
 
       return () => {
@@ -632,11 +646,11 @@ export default function Home() {
             </Text>
           </PremiumCard>
 
+          <OrientalDivider theme={theme} />
+
           <View style={styles.sectionHead}>
             <View>
               <Text style={[styles.sectionKicker, { color: theme.gold }]}>
-          <OrientalDivider theme={theme} />
-
                 VOTRE PARCOURS
               </Text>
               <Text style={[styles.sectionTitle, { color: theme.ink }]}>
@@ -644,10 +658,61 @@ export default function Home() {
               </Text>
             </View>
 
-            <Text style={[styles.tinyStrong, { color: theme.muted }]}>
-              {missionProgress.completed} / {missionProgress.total}
-            </Text>
+            <Pressable
+              onPress={() => router.push('/parcours')}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 7,
+                paddingHorizontal: 12,
+                paddingVertical: 9,
+                borderRadius: 12,
+                backgroundColor: theme.card2,
+                borderWidth: 1,
+                borderColor: theme.line,
+              }}
+            >
+              <Text
+                style={[
+                  styles.tinyStrong,
+                  { color: theme.gold, fontSize: 11 },
+                ]}
+              >
+                Parcours Nour
+              </Text>
+              <Ionicons name="arrow-forward" size={14} color={theme.gold} />
+            </Pressable>
           </View>
+
+          <Pressable
+            onPress={() => router.push('/parcours')}
+            accessibilityRole="button"
+            accessibilityLabel="Ouvrir mon Parcours Nour"
+            style={{
+              minHeight: 54,
+              marginTop: 12,
+              marginBottom: 12,
+              paddingHorizontal: 17,
+              borderRadius: 16,
+              backgroundColor: theme.emerald,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+              <Ionicons name="map-outline" size={21} color={theme.white} />
+              <View>
+                <Text style={{ color: theme.white, fontSize: 13, fontWeight: '900' }}>
+                  Ouvrir mon Parcours Nour
+                </Text>
+                <Text style={{ color: theme.white, fontSize: 10, opacity: 0.8, marginTop: 2 }}>
+                  Mes étapes et ma progression
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="arrow-forward" size={19} color={theme.white} />
+          </Pressable>
 
           <PremiumCard theme={theme} style={styles.programCard}>
             {missions.map((mission, i) => (
